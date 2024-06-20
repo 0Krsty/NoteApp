@@ -12,7 +12,9 @@ import (
 
 func HomeHandler(w http.ResponseWriter, r *http.Request) {
     w.WriteHeader(http.StatusOK)
-    fmt.Fprintf(w, "Welcome to NoteApp")
+    if _, err := fmt.Fprintf(w, "Welcome to NoteApp"); err != nil {
+        log.Printf("Error writing response: %v", err)
+    }
 }
 
 func setupRoutes() *mux.Router {
@@ -22,17 +24,21 @@ func setupRoutes() *mux.Router {
 }
 
 func main() {
-    err := godotenv.Load()
-    if err != nil {
-        log.Fatal("Error loading .env file")
+    if err := godotenv.Load(); err != nil {
+        log.Printf("Error loading .env file: %v\n", err)
     }
 
     port := os.Getenv("PORT")
     if port == "" {
+        log.Println("Port not specified in .env file, using the default port: 8080")
         port = "8080"
     }
 
-    r := setupToJsonRoutes()
+    r := setupRoutes()
+    serverAddress := fmt.Sprintf(":%s", port)
+
     fmt.Printf("Starting server on port %s\n", port)
-    log.Fatal(http.ListenAndServe(fmt.Sprintf(":%s", port), r))
+    if err := http.ListenAndServe(serverAddress, r); err != nil {
+        log.Fatalf("Failed to start the server on port %s: %v", port, err)
+    }
 }
