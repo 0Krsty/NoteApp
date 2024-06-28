@@ -14,7 +14,7 @@ type AppConfig struct {
 
 func NewConfig() *AppConfig {
 	if err := godotenv.Load(); err != nil {
-		log.Println("No .env file found, loading configuration from environment")
+		log.Printf("Error loading .env file: %s. Proceeding with system environment variables.\n", err)
 	}
 
 	config := AppConfig{
@@ -25,9 +25,11 @@ func NewConfig() *AppConfig {
 	return &config
 }
 
-func getEnv(key, fallback string) string {
+func getOriginVar(key, fallback string) string {
 	if value, exists := os.LookupEnv(key); exists {
+		log.Printf("Environment variable %s is set: %s\n", key, value)
 		return value
 	}
+	log.Printf("Environment variable %s is not set, using fallback: %s\n", key, fallback)
 	return fallback
 }
