@@ -6,6 +6,7 @@ import (
     "log"
     "net/http"
     "os"
+    "strconv"
 
     "github.com/gorilla/mux"
     "github.com/joho/godotenv"
@@ -28,35 +29,66 @@ func loadEnv() {
 
 func getNotes(w http.ResponseWriter, r *http.Request) {
     w.Header().Set("Content-Type", "application/json")
-    json.NewEncoder(w).Encode(notes)
+    pageStr := r.URL.Query().Get("page")
+    limitStr := r.URL.Query().Get("limit")
+
+    page, err := strconv.Atoi(pageStr)
+    if err != nil || page < 1 {
+        page = 1 // default to first page
+    }
+
+    limit, err := strconv.Atoi(limitStr)
+    if err != nil || limit < 1 || limit > 100 { // Limit results to 100 to prevent excessive loads
+        limit = 10 // default to 10 items per page
+    }
+
+    startIndex := (page - 1) * limit
+    endIndex := startIndex + limit
+
+    if startIndex > len(notes) {
+        startIndex = len(notes)
+    }
+    if endIndex > len(notes) {
+        endIndex = len(notes)
+    }
+
+    json.NewEncoder(w).Encode(notes[startIndex:endIndex])
 }
 
 func createNote(w http.ResponseWriter, r *http.Request) {
     w.Header().Set("Content-Type", "application/json")
     var note Note
-    _ = json.NewDecoder(r.Body).Decode(&note)
+    err := json.NewDecoder(r.Body).Decode(&note)
+    if err != nil {
+        http.Error(w, err.Error(), http.StatusBadRequest)
+        return
+    }
     notes = append(notes, note)
     json.NewEncoder(w).Encode(note)
 }
 
-// New endpoint for creating notes in batch
 func createNotesInBatch(w http.ResponseWriter, r *http.Request) {
     w.Header().Set("Content-Type", "application/json")
     var newNotes []Note
-    _ = json.NewDecoder(r.Body).Decode(&newNotes)
+    err := json.NewDecoder(r.Body).Decode(&newNotes)
+    if err != nil {
+        http.Error(w, err.Error(), http.StatusBadRequest)
+        return
+    }
     notes = append(notes, newNotes...)
     json.NewEncoder(w).Encode(newNotes)
 }
 
 func getNote(w http.ResponseWriter, r *http.Request) {
     w.Header().Set("Content-Type", "application/json")
-    params := mux.Vars(r) // Fixed typo from Vors to Vars
+    params := mux.Vars(r)
     for _, item := range notes {
         if item.ID == params["id"] {
             json.NewEncoder(w).Encode(item)
             return
         }
     }
+    http.NotFound(w, r)
 }
 
 func updateNote(w http.ResponseWriter, r *http.Request) {
@@ -66,13 +98,18 @@ func updateNote(w http.ResponseWriter, r *http.Request) {
         if item.ID == params["id"] {
             notes = append(notes[:index], notes[index+1:]...)
             var note Note
-            _ = json.NewDecoder(r.Body).Decode(&note)
+            err := json.NewDecoder(r.Body).Decode(&note)
+            if err != nil {
+                http.Error(w, err.Error(), http.StatusBadRequest)
+                return
+            }
             note.ID = params["id"]
             notes = append(notes, note)
             json.NewEncoder(w).Encode(note)
             return
         }
     }
+    http.NotFound(w, r)
 }
 
 func deleteNote(w http.ResponseWriter, r *http.Request) {
@@ -81,17 +118,21 @@ func deleteNote(w http.ResponseWriter, r *http.Request) {
     for index, item := range notes {
         if item.ID == params["id"] {
             notes = append(notes[:index], notes[index+1:]...)
-            break
+            json.NewEncoder(w).Encode(notes)
+            return
         }
     }
-    json.NewEncoder(w).Encode(notes)
+    http.NotFound(w, r)
 }
 
-// New endpoint for deleting notes in batch by Ids
 func deleteNotesInBatch(w http.ResponseWriter, r *http.Request) {
     w.Header().Set("Content-Type", "application/json")
     var idsToDelete map[string]bool
-    _ = json.NewDecoder(r.Body).Decode(&idsToDelete) // Assuming request body is {"id1":true, "id2":true, ...}
+    err := json.NewDecoder(r.Body).Decode(&idsToDelete)
+    if err != nil {
+        http.Error(w, err.Error(), http.StatusBadRequest)
+        return
+    }
     filteredNotes := []Note{}
     for _, note := range notes {
         if !idsToDelete[note.ID] {
@@ -103,17 +144,17 @@ func deleteNotesInBatch(w http.ResponseWriter, r *http.Request) {
 }
 
 func main() {
-    loadEnv()
+    loadEv()
 
     router := mux.NewRouter()
 
     router.HandleFunc("/api/notes", getNotes).Methods("GET")
     router.HandleFunc("/api/notes", createNote).Methods("POST")
-    router.HandleFunc("/api/notes/batch", createNotesInBatch).Methods("POST") // Batch create
+    router.HandleFunc("/api/notes/batch", createNotesInBatch).Methods("POST")
     router.HandleFunc("/api/notes/{id}", getNote).Methods("GET")
     router.HandleFunc("/api/notes/{id}", updateNote).Methods("PUT")
     router.HandleFunc("/api/notes/{id}", deleteNote).Methods("DELETE")
-    router.HandleFunc("/api/notes/batch", deleteNotesInProjectionJobBatch).Methods("DELETE") // Batch delete
+    router.HandleFunc("/api/notes/batch", deleteNotesInBatch).Methods("DELETE")
 
     log.Fatal(http.ListenAndServe(fmt.Sprintf(":%s", os.Getenv("PORT")), router))
 }
