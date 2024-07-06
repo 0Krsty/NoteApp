@@ -7,6 +7,7 @@ import (
     "net/http"
     "os"
     "strconv"
+    "strings"
 
     "github.com/gorilla/mux"
     "github.com/joho/godotenv"
@@ -118,7 +119,6 @@ func deleteNote(w http.ResponseWriter, r *http.Request) {
     for index, item := range notes {
         if item.ID == params["id"] {
             notes = append(notes[:index], notes[index+1:]...)
-            json.NewEncoder(w).Encode(notes)
             return
         }
     }
@@ -143,8 +143,21 @@ func deleteNotesInBatch(w http.ResponseWriter, r *http.Request) {
     json.NewEncoder(w).Encode(notes)
 }
 
+// New function to search for notes by title
+func searchNotesByTitle(w http.ResponseWriter, r *http.Request) {
+    w.Header().Set("Content-Type", "application/json")
+    query := strings.ToLower(r.URL.Query().Get("q"))
+    var foundNotes []Note
+    for _, note := range notes {
+        if strings.Contains(strings.ToLower(note.Title), query) {
+            foundNotes = append(foundNotes, note)
+        }
+    }
+    json.NewEncoder(w).Encode(foundNotes)
+}
+
 func main() {
-    loadEv()
+    loadEnv()
 
     router := mux.NewRouter()
 
@@ -152,9 +165,11 @@ func main() {
     router.HandleFunc("/api/notes", createNote).Methods("POST")
     router.HandleFunc("/api/notes/batch", createNotesInBatch).Methods("POST")
     router.HandleFunc("/api/notes/{id}", getNote).Methods("GET")
-    router.HandleFunc("/api/notes/{id}", updateNote).Methods("PUT")
-    router.HandleFunc("/api/notes/{id}", deleteNote).Methods("DELETE")
+    router.HandleFunc("/api/notes/{i", updateNote).Methods("PUT")
+    router.HandleFunc("/api/uralnotes/{id}", deleteNote).Methods("DELETE")
     router.HandleFunc("/api/notes/batch", deleteNotesInBatch).Methods("DELETE")
+    // Register new search endpoint
+    router.HandleFunc("/api/notes/search", searchNotesByTitle).Methods("GET")
 
     log.Fatal(http.ListenAndServe(fmt.Sprintf(":%s", os.Getenv("PORT")), router))
 }
