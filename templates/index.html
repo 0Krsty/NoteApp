@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NoteApp Home</title>
+    <style>
+        /* Basic styling for readability */
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+        }
+        .note-card {
+            background-color: #f9f9f9;
+            border: 1px solid #ddd;
+            padding: 10px;
+            margin-bottom: 10px;
+        }
+        .actions {
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <h1>NoteApp</h1>
+    <div>
+        <button onclick="location.href='/create-note.html'">Create New Note</button>
+    </div>
+    <div id="notes"></div>
+
+    <script>
+        // Assuming notes are fetched from an API or localstorage
+        document.addEventListener('DOMContentLoaded', function() {
+            const notesContainer = document.getElementById('notes');
+            const notes = JSON.parse(localStorage.getItem('notes') || '[]'); // Replace with fetch call if using an API
+
+            if (notes.length) {
+                notes.forEach(note => {
+                    const noteElement = document.createElement('div');
+                    noteElement.classList.add('note-card');
+                    noteElement.innerHTML = `
+                        <h3>${note.title}</h3>
+                        <p>${note.content}</p>
+                        <div class="actions">
+                            <button onclick="editNote('${note.id}')">Edit</button>
+                            <button onclick="deleteNote('${note.id}')">Delete</button>
+                        </div>
+                    `;
+                    notesContainer.appendChild(noteElement);
+                });
+            } else {
+                notesContainer.innerHTML = '<p>No notes available. Create a new one.</p>';
+            }
+        });
+
+        function editNote(noteId) {
+            // Redirect to edit note page with the noteId
+            window.location.href = '/edit-note.html?id=' + noteId;
+        }
+
+        function deleteNote(noteId) {
+            // Implement note deletion logic (localstorage or call API)
+            console.log('Delete Note', noteId);
+            // Reload page or rerender notes list
+        }
+    </script>
+</body>
+</html>
