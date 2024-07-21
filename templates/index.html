@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>NoteApp Home</title>
     <style>
-        /* Basic styling for readability */
         body {
             font-family: Arial, sans-serif;
             padding: 20px;
@@ -25,14 +24,20 @@
     <h1>NoteApp</h1>
     <div>
         <button onclick="location.href='/create-note.html'">Create New Note</button>
+        <button id="refreshNotes">Refresh Notes</button>
     </div>
     <div id="notes"></div>
 
     <script>
-        // Assuming notes are fetched from an API or localstorage
         document.addEventListener('DOMContentLoaded', function() {
+            loadNotes();
+        });
+
+        function loadNotes() {
             const notesContainer = document.getElementById('notes');
-            const notes = JSON.parse(localStorage.getItem('notes') || '[]'); // Replace with fetch call if using an API
+            const notes = JSON.parse(localStorage.getItem('notes') || '[]');
+
+            notesContainer.innerHTML = '';
 
             if (notes.length) {
                 notes.forEach(note => {
@@ -51,18 +56,20 @@
             } else {
                 notesContainer.innerHTML = '<p>No notes available. Create a new one.</p>';
             }
-        });
+        }
 
         function editNote(noteId) {
-            // Redirect to edit note page with the noteId
             window.location.href = '/edit-note.html?id=' + noteId;
         }
 
         function deleteNote(noteId) {
-            // Implement note deletion logic (localstorage or call API)
             console.log('Delete Note', noteId);
-            // Reload page or rerender notes list
+            loadNotes();
         }
+
+        document.getElementById('refreshNotes').addEventListener('click', function() {
+            loadNotes();
+        });
     </script>
 </body>
 </html>
