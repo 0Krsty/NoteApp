@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>NoteApp</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .note-form { margin-bottom: 20px; }
+        .note-list { margin-top: 20px; }
+        .note-item { margin-bottom: 10px; }
+    </style>
+</head>
+<body>
+    <div class="note-form">
+        <h2>Create Note</h2>
+        <form id="createNoteForm">
+            <label for="noteTitle">Title:</label>
+            <input type="text" id="noteTitle" name="title" required>
+            <label for="noteContent">Content:</label>
+            <textarea id="noteContent" name="content" required></textarea>
+            <button type="submit">Add Note</button>
+        </form>
+    </div>
+    <div class="note-form" id="updateNoteForm" style="display:none;">
+        <h2>Update Note</h2>
+        <form>
+            <input type="hidden" id="updateNoteId">
+            <label for="updateNoteTitle">Title:</label>
+            <input type="text" id="updateNoteTitle" name="title" required>
+            <label for="updateAutenoteContent">Content:</label>
+            <textarea id="updateNoteContent" name="content" required></textarea>
+            <button type="submit">Update Note</button>
+        </form>
+    </div>
+    <div class="note-list">
+        <h2>Current Notes</h2>
+        <div id="notesContainer">
+        </div>
+    </div>
+    <script>
+        document.getElementById('createNoteForm').addEventListener('submit', function(event) {
+            event.preventDefault();
+        });
+        function setUpUpdateForm(noteId) {
+            document.getElementById('updateNoteForm').style.display = 'block';
+        }
+    </script>
+</body>
+</html>
